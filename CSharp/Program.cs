@@ -1,8 +1,9 @@
-﻿using System;
+﻿#define WE_BE_DEBUGIN
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+//using System.Threading.Tasks;
 using System.Collections;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -10,6 +11,16 @@ using System.Diagnostics; //Stopwatch
 using System.IO;
 using System.Windows.Forms;
 using System.Runtime.CompilerServices;
+using System.Reflection; //Assembly
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Data.Entity;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
+using System.ServiceModel;
+using System.Runtime.Serialization;
+using System.Xml.Linq;
+using System.Text;
+using BFF = System.Reflection.BindingFlags;
 
 namespace CSharp
 {
@@ -500,8 +511,9 @@ namespace CSharp
 				new Babe("Yvonne"),
 				new Babe("Stephanie"),
 				new Babe("Denise"),
-				new Babe("Josie")
-			};
+				new Babe("Josie"),
+                new Babe("Abbi")
+            };
 			myBabes.Sort();
 			myBabes.ForEach(babe => Console.WriteLine(babe));
 
@@ -550,7 +562,7 @@ namespace CSharp
 
 		// Upcast Downcast TypeSafety
 
-		// *** 27 *** C# Type Safety
+		// *** 27 ***  Type Safety
 		class Base
 		{
 			public int baseValue;
@@ -650,7 +662,7 @@ namespace CSharp
 		{
 			public int mooCount;
 			public string name;
-			public Cow(string n = "", int m = 0) { n = name; mooCount = m; }
+			public Cow(string n = "", int m = 0) { name = n; mooCount = m; }
 			public void Moo() { mooCount++; }
 		}
 
@@ -1291,7 +1303,7 @@ namespace CSharp
 			{
 				public Car(TrainSignal trainSignal)
 				{
-					trainSignal.TrainsAComing += StopTheCar; // observing this trainSignal, when invoked, add a method to list of subscribers
+					trainSignal.TrainsAComing += StopTheCar; // Car is observing this trainSignal, when invoked, add the method StopTheCar to list of subscribers
 				}
 				void StopTheCar() { Console.WriteLine("Screeetch"); }
 			}
@@ -1329,7 +1341,7 @@ namespace CSharp
 			}
 		}
 
-		// *** 17, 18 *** EventHandler and sender, EventArgs
+		// *** 17, 18 *** EventHandler and sender, EventArgs - methods that subscribe to events are handlers
 		public class EventHandlerEventArgsMainClass
 		{
 			public enum CowState { Awake, Sleeping, Dead }
@@ -1421,7 +1433,7 @@ namespace CSharp
 				Application.Run(form);
 			}
 
-			static void theButtonWasClicked(object sender, EventArgs e)
+			static void theButtonWasClicked(object sender, EventArgs e) // our handler method
 			{
 				Button b = (Button)sender;
 				MessageBox.Show("You clicked the button: " + b.Text);
@@ -1441,7 +1453,7 @@ namespace CSharp
 		{
 			class Cow
 			{
-				private Dictionary<string, EventHandler> subscribers = new Dictionary<string, EventHandler>();
+				private Dictionary<string, EventHandler> subscribers = new Dictionary<string, EventHandler>(); // store subscribing delegate references on demand
 				const string BeginMooKey = "Begin moo";
 				public event EventHandler BeginMoo
 				{
@@ -1465,20 +1477,26 @@ namespace CSharp
 						subscribers.Remove(key);
 				}
 
+                /* do not need all these EventHandlers if we store delegate references on demand using above subscribers Dictionary
+                // hook design pattern
 				public event EventHandler Moo;
 				public event EventHandler EndMoo;
-				public event EventHandler BeginWalking; // hook design pattern
+				public event EventHandler BeginWalking;
 				public event EventHandler Walk;
 				public event EventHandler EndWalking;
 				public event EventHandler BeginSleeping;
 				public event EventHandler Sleeping;
 				public event EventHandler EndSleeping;
+                */
 			}
 		}
 
 		// *** 21 *** Unsubscribe Events
-		// if you don't unsubscribe, you cause 2 problems, 1) events will still subscribe so code behind event will run, and 2) maintains a reference to the delegate which you subscribed
-		// delegate has a reference to an object you might not be interested in anymore. if you never unsubscribe, GC will never come clean up and you will run out of memory
+		// if you don't unsubscribe, you cause 2 problems:
+        // 1) events will still subscribe so code behind event will run
+        // 2) maintains a reference to the delegate which you subscribed
+		// delegate has a reference to an object you might not be interested in anymore. 
+        // if you never unsubscribe, GC will never come clean up and you will run out of memory
 		public class UnsubscribeEventsMainClass
 		{
 			class Person
@@ -1523,9 +1541,9 @@ namespace CSharp
 				//d1(new Derived()); // this actually works because of TakeDerived takes a Derived
 				MyDelegate d2 = TakeBase;
 
-				MyOtherDelegate d3 = TakeDerived;  // MyDelegate requires general Base, but method TakeDerived requires specific Derived - the argument Base is not contravariant with Derived
+				MyOtherDelegate d3 = TakeDerived;
 				//d3(new Base()); // will not work because TakeDerived requires more specific Derived object
-				MyOtherDelegate d4 = TakeBase; // works because MyOtherDelegate argument is a more specific type of TakeBase Base argument
+				MyOtherDelegate d4 = TakeBase; // works because MyOtherDelegate Derived argument is a more specific type of TakeBase Base argument - the argument Derived is contravariant with Base
 			}
 		}
 
@@ -2063,8 +2081,8 @@ namespace CSharp
 		}
 	}
 
-	// *** 2 *** Why The 'this' On Extension Methods
-	static class MyExtensionHelpers
+	// *** 2 *** Why The 'this' On Extension Methods    
+    static class MyExtensionHelpers
 	{
 		public static DateTime CombineDate(this DateTime datePart, DateTime timePart)
 		{
@@ -2183,7 +2201,7 @@ namespace CSharp
 		}
 	}
 
-	// *** 7 *** C# LINQ Degenerate Select Clauses - compiler will not waste run time on select clause
+	// *** 7 *** LINQ Degenerate Select Clauses - compiler will not waste run time on select clause
 	static class LinqDegenerateSelectClausesMainClass
 	{
 		static IEnumerable<int> Where(this int[] ints, Func<int, bool> gauntlet)
@@ -2212,7 +2230,7 @@ namespace CSharp
 		}
 	}
 
-	// *** 8 *** C# LINQ - Compiler Translation of a Larger Example
+	// *** 8 *** LINQ - Compiler Translation of a Larger Example
 	static class LinqCompilerTranslationLargerExampleMainClass
 	{
 		static void LinqCompilerTranslationLargerExampleMain()
@@ -2256,7 +2274,7 @@ namespace CSharp
 		}
 	}
 
-	// *** 9 *** C# LINQ - Introduction to Deferred Execution - we don't execute until we start to consume
+	// *** 9 *** LINQ - Introduction to Deferred Execution - we don't execute until we start to consume
 	static class LinqIntroductionDeferredExecutionMainClass
 	{
 		static IEnumerable<T> Where<T>(this IEnumerable<T> items, Func<T, bool> gauntlet)
@@ -2285,7 +2303,7 @@ namespace CSharp
 		}
 	}
 
-	// *** 10 *** C# LINQ - Deferred Execution Explained
+	// *** 10 *** LINQ - Deferred Execution Explained
 	static class LinqDeferredExecutionExplainedMainClass
 	{
 		static IEnumerable<T> Where<T>(this IEnumerable<T> items, Func<T, bool> gauntlet)
@@ -2319,7 +2337,7 @@ namespace CSharp
 		}
 	}
 
-	// *** 11 *** C# LINQ - Deferred Execution - Assembly Line
+	// *** 11 *** LINQ - Deferred Execution - Assembly Line
 	static class LinqDeferredExecutionAssemblyLineMainClass
 	{
 		static IEnumerable<T> Where<T>(this IEnumerable<T> items, Func<T, bool> gauntlet)
@@ -2348,7 +2366,7 @@ namespace CSharp
 		}
 	}
 
-	// *** 12 *** C# LINQ - Deferred Execution - Runtime Created Assembly Line
+	// *** 12 *** LINQ - Deferred Execution - Runtime Created Assembly Line
 	class LinqDeferredExecutionRuntimeCreatedAssemblyLineMainClass
 	{
 		static void LinqDeferredExecutionRuntimeCreatedAssemblyLineMain()
@@ -2464,7 +2482,7 @@ namespace CSharp
 			public Customer Customer { get; set; }
 		}
 
-		// *** 13 *** C# LINQ - More Realistic Data (Northwind Database)
+		// *** 13 *** LINQ - More Realistic Data (Northwind Database)
 		static class LinqMoreRealisticDataMainClass
 		{
 			static void LinqMoreRealisticDataMain()
@@ -2486,7 +2504,7 @@ namespace CSharp
 			}
 		}
 
-		// *** 14 *** C# LINQ - Projections
+		// *** 14 *** LINQ - Projections
 		static class LinqProjectionsMainClass
 		{
 			static void LinqProjectionsMain()
@@ -2524,7 +2542,7 @@ namespace CSharp
 			}
 		}
 
-		// *** 15 *** C# LINQ - order by
+		// *** 15 *** LINQ - order by
 		class LinqOrderByMainClass
 		{
 			static void LinqOrderByMain()
@@ -2545,7 +2563,7 @@ namespace CSharp
 			}
 		}
 
-		// *** 16 *** C# LINQ - Random Ordering
+		// *** 16 *** LINQ - Random Ordering
 		class LinqRandomOrderingMainClass
 		{
 			static void LinqRandomOrderingMain()
@@ -2560,7 +2578,7 @@ namespace CSharp
 			}
 		}
 
-		// *** 17 *** C# LINQ - group by - IGrouping is an IEnumerable with a Key
+		// *** 17 *** LINQ - group by - IGrouping is an IEnumerable with a Key
 		class LinqGroupByMainClass
 		{
 			static void LinqGroupByMain()
@@ -2585,7 +2603,7 @@ namespace CSharp
 			}
 		}
 
-		// *** 18 *** C# LINQ - Counting Elements In Groups
+		// *** 18 *** LINQ - Counting Elements In Groups
 		class LinqCountingElementsInGroupsMainClass
 		{
 			static void LinqCountingElementsInGroupsMain()
@@ -2603,7 +2621,7 @@ namespace CSharp
 			}
 		}
 
-		// *** 19 *** C# LINQ - let Clauses and Also Transparent Identifiers - use let to define variables to eliminate redundant calculations (g.Count() calculated twice in video 18)
+		// *** 19 *** LINQ - let Clauses and Also Transparent Identifiers - use let to define variables to eliminate redundant calculations (g.Count() calculated twice in video 18)
 		class LinqLetClausesTransparentIdentifiersMainClass
 		{
 			static void LinqLetClausesTransparentIdentifiersMain()
@@ -2629,7 +2647,7 @@ namespace CSharp
 			}
 		}
 
-		// *** 20 *** C# LINQ - Introduction to into - compiler takes the above query and turns it into the source for the query below it
+		// *** 20 *** LINQ - Introduction to into - compiler takes the above query and turns it into the source for the query below it
 		class LinqIntroductionToIntoMainClass
 		{
 			static void LinqIntroductionToIntoMain()
@@ -2648,7 +2666,7 @@ namespace CSharp
 			}
 		}
 
-		// *** 21 *** C# LINQ - into Translation
+		// *** 21 *** LINQ - into Translation
 		class LinqIntoTranslationMainClass
 		{
 			static void LinqIntoTranslationMain()
@@ -2684,7 +2702,7 @@ namespace CSharp
 			}
 		}
 
-		// *** 22 *** C# LINQ - Grouping By Multiple Fields
+		// *** 22 *** LINQ - Grouping By Multiple Fields
 		class LinqGroupingByMultipleFieldsMainClass
 		{
 			static void LinqGroupingByMultipleFieldsMain()
@@ -2704,7 +2722,7 @@ namespace CSharp
 			}
 		}
 
-		// *** 23 *** C# LINQ - Selecting (Projecting) While Grouping
+		// *** 23 *** LINQ - Selecting (Projecting) While Grouping
 		class LinqSelectingProjectingWhileGroupingMainClass
 		{
 			static void LinqSelectingProjectingWhileGroupingMain()
@@ -2726,7 +2744,7 @@ namespace CSharp
 			}
 		}
 
-		// *** 24 *** C# LINQ - Let Clauses and Even Deeper Transparent Identifiers
+		// *** 24 *** LINQ - Let Clauses and Even Deeper Transparent Identifiers
 		class LinqLetClausesDeeperTransparentIdentifiersMainClass
 		{
 			static void LinqLetClausesDeeperTransparentIdentifiersMain()
@@ -2813,7 +2831,7 @@ namespace CSharp
 			}
 		}
 
-		// *** 27 *** C# Join Clause Translation With Other Clauses Besides Select
+		// *** 27 ***  Join Clause Translation With Other Clauses Besides Select
 		class LinqJoinClauseTranslationMainClass
 		{
 			static void LinqJoinClauseTranslationMain()
@@ -3000,7 +3018,7 @@ namespace CSharp
 			string[] arr_temp = Console.ReadLine().Split(' ');
 			intArray = Array.ConvertAll(arr_temp, Int32.Parse);
 
-			// Transform array to new string array
+			// Transform array to new string array - double each int and convert to string
 			arr_temp = intArray.Select(x => (2 * x).ToString()).ToArray();
 
 			// sum of lengths of strings in a List
@@ -3157,7 +3175,7 @@ namespace CSharp
 	// *** 1 *** Hello World Thread
 	public class HelloWorldThread
 	{
-		class HelloWorldThreadMainClass
+		public class HelloWorldThreadMainClass
 		{
 			static void HelloWorldThreadMain()
 			{
@@ -3174,7 +3192,7 @@ namespace CSharp
 	// *** 2 *** Multiple Threads
 	public class MultipleThreads
 	{
-		class MultipleThreadsMainClass
+		public class MultipleThreadsMainClass
 		{
 			static void MultipleThreadsMain()
 			{
@@ -3195,7 +3213,7 @@ namespace CSharp
 	// *** 3 *** Difference Between Background and Foreground Thread - OS process will not terminate until all foreground threads have terminated
 	public class BackgroundForegroundThread
 	{
-		class BackgroundForegroundThreadMainClass
+		public class BackgroundForegroundThreadMainClass
 		{
 			static void BackgroundForegroundThreadMain()
 			{
@@ -3219,7 +3237,7 @@ namespace CSharp
 	// *** 4 *** Thread Synchronization Issue
 	public class ThreadSynchronizationIssue
 	{
-		class ThreadSynchronizationIssueMainClass
+		public class ThreadSynchronizationIssueMainClass
 		{
 			static int count = 0;
 			static void ThreadSynchronizationIssueMain()
@@ -3248,7 +3266,7 @@ namespace CSharp
 	// *** 5 *** Basic Thread Synchronization
 	public class BasicThreadSynchronization
 	{
-		class BasicThreadSynchronizationMainClass
+        public class BasicThreadSynchronizationMainClass
 		{
 			static int count = 0;
 			static object baton = new object(); // in order for thread to get into danger zone (when read or write to shared data), it has to have the baton
@@ -3280,7 +3298,7 @@ namespace CSharp
 	// *** 6 *** Another Thread Synchronization
 	public class AnotherThreadSynchronization
 	{
-		class AnotherThreadSynchronizationMainClass
+        public class AnotherThreadSynchronizationMainClass
 		{
 			static object baton = new object();
 			static Random rand = new Random();
@@ -3308,7 +3326,7 @@ namespace CSharp
 	// *** 7 *** lock to Monitor Method Calls - lock is syntactic sugar
 	public class LockMonitorMethodCalls
 	{
-		class LockMonitorMethodCallsMainClass
+        public class LockMonitorMethodCallsMainClass
 		{
 			static object baton = new object();
 			static void LockMonitorMethodCallsMain()
@@ -3332,7 +3350,7 @@ namespace CSharp
 	// *** 8 *** Threading - Divide and Conquer Part 1
 	public class ThreadingDivideConquerOne
 	{
-		class ThreadingDivideConquerOneMainClass
+        public class ThreadingDivideConquerOneMainClass
 		{
 			static byte[] values = new byte[500000000];
 			static void GenerateInts()
@@ -3360,7 +3378,7 @@ namespace CSharp
 	// *** 9 *** Threading - Divide and Conquer Part 2
 	public class ThreadingDivideConquerTwo
 	{
-		class ThreadingDivideConquerTwoMainClass
+        public class ThreadingDivideConquerTwoMainClass
 		{
 			static byte[] values = new byte[500000000];
 			static long[] portionResults;
@@ -3400,7 +3418,7 @@ namespace CSharp
 	// *** 10 *** Threading - Divide and Conquer Part 3
 	public class ThreadingDivideConquerThree
 	{
-		class ThreadingDivideConquerThreeMainClass
+        public class ThreadingDivideConquerThreeMainClass
 		{
 			static byte[] values = new byte[500000000];
 			static long[] portionResults;
@@ -3467,7 +3485,7 @@ namespace CSharp
 	// *** 12 *** Producer Consumer Thread Implementation Part 1
 	public class ProducerConsumerThreadOne
 	{
-		class ProducerConsumerThreadOneMainClass
+        public class ProducerConsumerThreadOneMainClass
 		{
 			static Queue<int> numbers = new Queue<int>();
 			static Random rand = new Random();
@@ -3501,7 +3519,7 @@ namespace CSharp
 	// *** 13 *** Producer Consumer Thread Implementation Part 2
 	public class ProducerConsumerThreadTwo
 	{
-		class ProducerConsumerThreadTwoMainClass
+        public class ProducerConsumerThreadTwoMainClass
 		{
 			static Queue<int> numbers = new Queue<int>();
 			static Random rand = new Random();
@@ -3555,7 +3573,7 @@ namespace CSharp
 	// *** 14 *** Producer Consumer Thread Synchronization Issues
 	public class ProducerConsumerThreadSynchronizationIssues
 	{
-		class ProducerConsumerThreadSynchronizationIssuesMainClass
+        public class ProducerConsumerThreadSynchronizationIssuesMainClass
 		{
 			static Queue<int> numbers = new Queue<int>();
 			static Random rand = new Random();
@@ -3618,7 +3636,7 @@ namespace CSharp
 	// *** 15 *** Race Condition Example - threads racing to grab an object
 	public class RaceCondition
 	{
-		class RaceConditionMainClass
+        public class RaceConditionMainClass
 		{
 			static Queue<int> numbers = new Queue<int>();
 			static Random rand = new Random(987);
@@ -3684,7 +3702,7 @@ namespace CSharp
 	// *** 16 *** ProducerConsumerLock
 	public class ProducerConsumerLock
 	{
-		class ProducerConsumerLockMainClass
+        public class ProducerConsumerLockMainClass
 		{
 			static Queue<int> numbers = new Queue<int>();
 			static Random rand = new Random(987);
@@ -3740,7 +3758,7 @@ namespace CSharp
 		}
 	}
 
-	// *** 17 *** Best C# Practices When Lock on Object
+	// *** 17 *** Best  Practices When Lock on Object
 	public class LockOnObject
 	{
 		class BathroomStall
@@ -3780,7 +3798,7 @@ namespace CSharp
 	// It will only let one thread execute code inside of it at one time. They didn't add this feature when they added the generic queue.
 	public class SynchronizedContainers {
 
-		class SynchronizedContainersMainClass
+        public class SynchronizedContainersMainClass
 		{
 			static MySynchronizedQueue<int> numbers = new MySynchronizedQueue<int>();
 			static Random rand = new Random(987);
@@ -3897,7 +3915,7 @@ namespace CSharp
 			}
 		}
 
-		class LockingCodeIntelligentlyMainClass
+        public class LockingCodeIntelligentlyMainClass
 		{
 			static void LockingCodeIntelligentlyMain()
 			{
@@ -3969,7 +3987,7 @@ namespace CSharp
 			}
 		}
 
-		class LockingOnThisVsMethodImplOptionsSynchronizedMainClass
+        public class LockingOnThisVsMethodImplOptionsSynchronizedMainClass
 		{
 			static void LockingOnThisVsMethodImplOptionsSynchronizedMain()
 			{
@@ -3980,13 +3998,650 @@ namespace CSharp
 		}
 	}
 
-	#endregion THREADING
+    #endregion THREADING
 
-	#region MISCELLANEOUS
+    #region ATTRIBUTES_REFLECTION
 
-	// *** 1 *** var - added in C# 3.5, can only use var within the scope of a function or property body (where you can have expression on right side to infer type)
-	// still compile time, still safe, statically checked, useful for anonymous types when we don't know the class name
-	public class CSharpVar
+    /* Attributes provide a powerful method of associating metadata, or declarative information, with code (assemblies, types, methods, properties, and so forth). 
+     * After an attribute is associated with a program entity, the attribute can be queried at run time by using a technique called reflection.
+     */
+
+    // *** 1 *** Hello World Attributes - build project generates executable, that executable is an assembly (executable or DLL)
+    // 3 types inside this assembly (within class HelloWorldAttributes) - TestAttribute, MyTestSuite, HelloWorldAttributesMainClass
+    public class HelloWorldAttributes
+    {
+        class TestAttribute : Attribute { }
+
+        [TestAttribute]
+        class MyTestSuite { }
+
+        [TestAttribute]
+        class YourTestSuite { }
+        
+        public class HelloWorldAttributesMainClass
+        {
+            public static void HelloWorldAttributesMain()
+            {   
+                // print all types that have TestAttribute
+                foreach (Type t in Assembly.GetExecutingAssembly().GetTypes())
+                    foreach(Attribute a in t.GetCustomAttributes(false))
+                        if (a is TestAttribute)
+                            Console.WriteLine(t.Name + " is a test suite!");
+
+                // LINQ translation
+                var testSuites =
+                    from t in Assembly.GetExecutingAssembly().GetTypes()
+                    where t.GetCustomAttributes(false).Any(a => a is TestAttribute)
+                    select t;
+                foreach(Type t in testSuites)
+                    Console.WriteLine(t.Name);
+            }
+        }
+    }
+
+    // *** 2 *** Reflection - reflection means look at info through Type objects that describes assemblies, modules, and types
+    public class Reflection
+    {
+        class TestAttribute : Attribute { }
+
+        class TestMethodAttribute: Attribute { }
+
+        [Test] // "Attribute" not necessary - automatically types out TestAttribute
+        class MyTestSuite 
+        {
+            public void HelperMethod() { Console.WriteLine("Helps our tests get their job done..."); }
+            [TestMethod]
+            public void MyTestMethod1() 
+            {
+                HelperMethod();
+                Console.WriteLine("Doing some testing..."); 
+            }
+            [TestMethod]
+            public void MyTestMethod2() 
+            {
+                HelperMethod();
+                Console.WriteLine("Doing some other testing..."); 
+            }
+        }
+
+        public class ReflectionMainClass 
+        {
+            public static void ReflectionMain()
+            {
+                // automatically execute methods with TestMethodAttribute
+                // give me the types and inside the types give me the custom attributes
+                var testSuites =
+                        from t in Assembly.GetExecutingAssembly().GetTypes()
+                        where t.GetCustomAttributes(false).Any(a => a is TestAttribute)
+                        select t;
+
+                foreach (Type t in testSuites)
+                { 
+                    Console.WriteLine("Running tests in suite: " + t.Name);
+                    var testMethods =
+                        from m in t.GetMethods()
+                        where m.GetCustomAttributes(false).Any(a => a is TestMethodAttribute)
+                        select m;
+                    object testSuiteInstance = Activator.CreateInstance(t);
+                    foreach (MethodInfo mInfo in testMethods)
+                        mInfo.Invoke(testSuiteInstance, new object[0]);
+                }
+            }
+        }
+
+        // *** 3 *** Attributes - we decorate types with attributes
+        public class Attributes
+        {
+            class MeAttribute : Attribute 
+            {
+                public MeAttribute(int value, string secondValue)
+                {
+                    Console.WriteLine("MeAttribute");
+                    Console.WriteLine(value);
+                    Console.WriteLine(secondValue);
+                }
+                public int SomeIntProperty { get; set; }
+                public char SomeCharProperty { get; set; }
+            }
+
+            [Me(25, "Yianni", SomeCharProperty = 'J', SomeIntProperty = 72)]
+            public class AttributesMainClass
+            {
+                public static void AttributesMain()
+                {
+                    typeof(AttributesMainClass).GetCustomAttributes(false);
+                }
+            }
+        }
+    }
+
+    // *** 4 *** Attributes Example
+    public class AttributesExample
+    {
+        // Example 1
+        [Serializable]
+        class Cow
+        {
+            public string Name;
+            public int Weight;
+        }
+
+        public class AttributesExampleOneMainClass
+        {
+            public static void AttributesExampleOneMain()
+            {
+                // doesn't work unless Cow has Serializable attribute
+                var betsy = new Cow { Name = "Betsy", Weight = 500 };
+                var formatter = new BinaryFormatter();
+                var memoryStream = new MemoryStream();
+                formatter.Serialize(memoryStream, betsy);
+                memoryStream.Seek(0, SeekOrigin.Begin);
+                var betsysClone = formatter.Deserialize(memoryStream) as Cow;
+                Console.WriteLine(betsysClone.Name);
+                Console.WriteLine(betsysClone.Weight);
+            }
+        }
+
+        // Example 2
+        class MeContext : DbContext
+        {
+            public DbSet<Person> People { get; set; }
+        }
+
+        [Table("ActualTableNameInDatabase")]
+        class Person
+        {
+            public int ID { get; set; }
+            [Required]
+            [MaxLength(50)]
+            public string FirstName { get; set; }
+            public string LastName { get; set; }
+            public int Age { get; set; }
+        }
+
+        public class AttributesExampleTwoMainClass
+        {
+            public static void AttributesExampleTwoMain()
+            {
+                var db = new MeContext();
+                foreach (var person in db.People)
+                    Console.WriteLine(person.FirstName);
+            }
+        }
+
+        // Example 3
+        [ServiceContract]
+        interface ICow
+        {
+            [OperationContract]
+            void Moo();
+        }
+
+        class MeCow : ICow
+        {
+            public void Moo() { Console.WriteLine("Moooooo"); }
+        }
+
+        public class AttributesExampleThreeMainClass
+        {
+            public static void AttributesExampleThreeMain()
+            {
+                var host = new ServiceHost(typeof(MeCow));
+                host.AddServiceEndpoint(typeof(ICow), new WSHttpBinding(), "http://localhost:1234");
+                host.Open();
+
+                // At some other end of the globe:
+                var cow = ChannelFactory<ICow>.CreateChannel(new WSHttpBinding(), new EndpointAddress("http://localhost:1234"));
+                cow.Moo();
+            }
+        }
+    }
+
+    // *** 5 *** How .NET Embeds Attribute Data Into Assemblies
+    public class EmbedsAttributeDataIntoAssemblies
+    {
+        class MeAttribute : Attribute 
+        {
+            public MeAttribute(int arg) { }
+            public string MeString { get; set; }
+        }
+        
+        // attribute arguments must be constant expressions
+        [Me(5 + 3, MeString = "I love programming with attributes")]
+        public class EmbedsAttributeDataIntoAssembliesMainClass
+        {
+            public static void EmbedsAttributeDataIntoAssembliesMain()
+            {
+            }
+        }
+    }
+
+    // *** 6 *** Attribute Usage
+    public class AttributeUsage
+    {
+        //[assembly: Me]
+
+        // will only allow attribute usage on classes or fields
+        [AttributeUsage(AttributeTargets.Class | AttributeTargets.Field, AllowMultiple = true)]
+        class MeAttribute : Attribute 
+        {
+            public MeAttribute() { Console.WriteLine("MeAttribute()"); }
+        }
+
+        [Me, Me, Me, Me]
+        class MeVictim
+        {
+            public MeVictim() { MeField = ""; MeEvent(); }
+            //[Me]
+            public int MeProperty { /*[Me]*/ get { return 5; } }
+            //[Me]
+            public event Action MeEvent;
+            [Me]
+            public string MeField;
+            //[Me]
+            //[return: Me]
+            int MeMethod( /*[Me]*/ int meParameter) { return meParameter; }
+        }
+
+        public class AttributeUsageMainClass
+        {
+            public static void AttributeUsageMain()
+            {
+                typeof(MeVictim).GetCustomAttributes(false);
+            }
+        }
+    }
+
+    // *** 7 *** Inherited Attributes and IsDefined
+    public class InheritedAttributesAndIsDefined
+    {
+        //[AttributeUsage(AttributeTargets.All, Inherited = false)] // Inherited = false will not allow attribute to be inherited
+        class MeAttribute : Attribute 
+        {
+            public MeAttribute() { Console.WriteLine("MeAttribute()"); }
+        }
+
+        [Me]
+        class Base { }
+        class Derived : Base { }
+
+        public class InheritedAttributesAndIsDefinedMainClass
+        {
+            public static void InheritedAttributesAndIsDefinedMain()
+            {
+                Console.WriteLine(typeof(Derived).GetCustomAttributes(true)); // true will give all attributes of inherited classes
+                Console.WriteLine(typeof(Derived).IsDefined(typeof(MeAttribute), true)); // tells you if attribute is defined on Derived
+            }
+        }
+    }
+
+    // *** 8 *** Assembly Attributes
+    //[assembly: ] // should go on first line of code in file after using statements, attaches attributes to the assembly
+
+    // *** 9 *** ConditionalAttribute - based on certain conditions compile some code in or compile some code out
+    //#define WE_BE_DEBUGIN - place on first line of code above using statements
+    public class ConditionalAttributeClass
+    {
+        public class ConditionalAttributeMainClass
+        {
+            public static void ConditionalAttributeMain()
+            {
+                TraceDebuggingStuff("We are debugging here");
+            }
+            [Conditional("WE_BE_DEBUGIN")] // will only compile tagged method TraceDebuggingStuff if we have #define WE_BE_DEBUGIN above
+            public static void TraceDebuggingStuff(string messageToTrace)
+            {
+                Console.WriteLine("Debugging: " + messageToTrace);
+            }
+        }
+    }
+
+    // *** 10 *** ObsoleteAttribute - when we want to deprecate code
+    public class ObsoleteAttributeClass
+    {
+        class MeAwesomeClass
+        {
+            [Obsolete("Hey, I found a better way to design this API. Please see my new API for a better approach", true)]
+            public static void MeFirstAttemptAtAnAwesomeAlgorithm() { Console.WriteLine("Some awesome code"); }
+        }
+        
+        public class ObsoleteAttributeMainClass
+        {
+            public static void ObsoleteAttributeMain()
+            {
+                //MeAwesomeClass.MeFirstAttemptAtAnAwesomeAlgorithm(); // provides an error if I try to compile
+            }
+        }
+    }
+
+    // *** 11 *** DebuggerStepThrough and DebuggerHidden Attributes
+    public class DebuggerStepThroughDebuggerHiddenAttributes
+    {
+        class Cow
+        {   
+            public string Name { [DebuggerStepThrough] get { return "Bessy"; } }
+            public int Age { get { return 5; } }
+        }
+
+        public class DebuggerStepThroughDebuggerHiddenAttributesMainClass
+        {
+            public static void DebuggerStepThroughDebuggerHiddenAttributesMain()
+            {
+                var cow = new Cow();
+                EyeCowForButchering(cow.Name, cow.Age);
+
+                FirstMethod();
+            }
+            static void EyeCowForButchering(string name, int age)
+            {
+                Console.WriteLine(name + " " + age);
+            }
+
+            static void FirstMethod() { SecondMethod(); }
+            //[DebuggerStepThrough]
+            [DebuggerHidden]
+            static void SecondMethod() { ThirdMethod(); }
+            static void ThirdMethod() { }
+        }
+    }
+
+    // *** 12 *** DebuggerDisplayAttribute
+    public class DebuggerDisplayAttributeClass
+    {
+        [DebuggerDisplay("{Name}, Amount of meat: {Weight}")]
+        class Cow
+        {
+            public string Name { get; set; }
+            public int Age { get; set; }
+            public int Weight { get; set; }
+        }
+
+        public class DebuggerDisplayAttributeMainClass
+        {
+            public static void DebuggerDisplayAttributeMain()
+            {
+                var cow = new Cow { Name = "Betsy", Age = 5, Weight = 1500 };
+                Console.WriteLine(cow);
+            }
+        }
+    }
+
+    // *** 13, 14, 15, 16 *** Add-Ins, .NET Add-Ins, .NET Add-In Host
+    // only reference interface - plug-in architecture, at runtime use reflection, late binding - bind at runtime dynamically
+    public class AddIns
+    {
+        public struct ChessMove
+        {
+            public int StartRow { get; set; }
+            public int EndRow { get; set; }
+            public int StartColumn { get; set; }
+            public int EndColumn { get; set; }
+        }
+        public enum ChessPiece { King, Queen, Rook, Knight, Bishop, Pawn }
+        public interface IChessGame
+        {
+            ChessMove MakeMove(ChessPiece[,] board);
+        }
+
+        class MyChessAlgorithm : IChessGame
+        {
+            public ChessMove MakeMove(ChessPiece[,] board) { return new ChessMove() { StartRow = 1, EndRow = 2, StartColumn = 3, EndColumn = 4 }; }
+        }
+        class YourChessAlgorithm : IChessGame
+        {
+            public ChessMove MakeMove(ChessPiece[,] board) { return new ChessMove() { StartRow = 100, EndRow = 200, StartColumn = 300, EndColumn = 400 }; }
+        }
+
+        
+        public class AddInsMainClass
+        {
+            public static void AddInsMain()
+            {
+                // late binding - load assemblies at runtime
+                Assembly player1Assembly = Assembly.Load("MyChessAlgorithm");
+                Assembly player2Assembly = Assembly.Load("YourChessAlgorithm");
+                IChessGame player1 = CreatePlayerAlgorithmInstance(player1Assembly);
+                IChessGame player2 = CreatePlayerAlgorithmInstance(player2Assembly);
+
+                ChessMove myMove = player1.MakeMove(null);
+                ChessMove yourMove = player2.MakeMove(null);
+                Console.WriteLine(myMove.StartColumn);
+                Console.WriteLine(yourMove.StartColumn);
+            }
+
+            private static IChessGame CreatePlayerAlgorithmInstance(Assembly player)
+            {
+                Type playerAlgorithmType = player.GetTypes().Single(t => t.GetInterfaces().Any(interfaceType => interfaceType.Equals(typeof(IChessGame))));
+                return Activator.CreateInstance(playerAlgorithmType) as IChessGame;
+            }
+        }
+    }
+
+    // *** 17, 18 *** Attributes and Serialization, Writing Our Own Serializer
+    // serialize is to converts to bits and bytes
+    public class AttributesSerialization
+    {
+        // DataContract and DataMember are WCF Attributes
+        [DataContract]
+        class Person
+        {
+            [DataMember]
+            public string FirstName { get; set; }
+            [DataMember]
+            public string LastName { get; set; }
+            [DataMember]
+            public int Age { get; set; }
+        }
+
+        class MeSerializer
+        {
+            Type targetType;
+            public MeSerializer(Type targetType)
+            {
+                this.targetType = targetType;
+                if (!targetType.IsDefined(typeof(DataContractAttribute), false))
+                    throw new Exception("No soup for you.");
+            }
+            public void WriteObject(Stream stream, object graph)
+            {
+                IEnumerable<PropertyInfo> serializableProperties = targetType.GetProperties().Where(p => p.IsDefined(typeof(DataMemberAttribute), false));
+                var writer = new StreamWriter(stream);
+                writer.WriteLine("<" + targetType.Name + ">");
+                foreach (PropertyInfo propInfo in serializableProperties)
+                    writer.Write("\t<" + propInfo.Name + ">" + propInfo.GetValue(graph, null) + "</" + propInfo + ">");
+                writer.WriteLine("</" + targetType.Name + ">");
+                writer.Flush();
+            }
+        }
+        public class AttributesSerializationMainClass
+        {
+            public static void AttributesSerializationMain()
+            {
+                var me = new Person { FirstName = "Yianni", LastName = "Alexander", Age = 37 };
+                //var serializer = new DataContractSerializer(me.GetType());
+                var serializer = new MeSerializer(me.GetType());
+                var someRam = new MemoryStream();
+                serializer.WriteObject(someRam, me);
+                someRam.Seek(0, SeekOrigin.Begin);
+                Console.WriteLine(XElement.Parse(Encoding.ASCII.GetString(someRam.GetBuffer()).Replace("\0", "")));
+            }
+        }
+    }
+
+    // *** 19 *** Using Reflection to Analyze Collection Classes
+    public class UsingReflectionAnalyzeCollections
+    {
+        public class UsingReflectionAnalyzeCollectionsMainClass
+        {
+            public static void UsingReflectionAnalyzeCollectionsMain()
+            {
+                Assembly mscorlib = Assembly.Load("mscorlib");
+                //Console.WriteLine(mscorlib.GetTypes().Where(t => t.Namespace == null ? false : t.Namespace.Contains("System.Collection")).Select(t => t.Name));
+                // get count of all types that implement generic IEnumerable
+                Console.WriteLine(mscorlib.GetTypes()
+                    .Where(t => t.GetInterfaces()
+                        .Any(it => it.IsGenericType ? it.GetGenericTypeDefinition().Equals(typeof(IEnumerable<>)) : false))
+                    .Count());
+                // get count of all types that implement generic ICollection
+                Console.WriteLine(mscorlib.GetTypes()
+                    .Where(t => t.GetInterfaces()
+                        .Any(it => it.IsGenericType ? it.GetGenericTypeDefinition().Equals(typeof(ICollection<>)) : false))
+                    .Count());
+            }
+        }
+    }
+
+    // *** 20 *** Writing Your Own Reflector
+    public class WritingYourOwnReflector
+    {
+        class Person
+        {
+            public Person() { Console.WriteLine("Person()"); MeField = 0; GotSomeAction(); }
+            public string FirstName { get; set; }
+            public string LastName { get; set; }
+            public int Age { get; set; }
+            public int MeField;
+            public void AnnounceThyself() { Console.WriteLine("Boooooooyah!"); }
+            public event Action GotSomeAction;
+        }
+
+        public class WritingYourOwnReflectorMainClass
+        {
+            public static void WritingYourOwnReflectorMain()
+            {
+                var assembly = Assembly.GetExecutingAssembly();
+                Console.WriteLine(assembly.FullName);
+                foreach(Type type in assembly.GetTypes())
+                {
+                    Console.WriteLine("\t" + type.Name);
+                    Console.WriteLine("\t\tFields:");
+                    foreach(FieldInfo field in type.GetFields())
+                        Console.WriteLine("\t\t\t" + field.FieldType + " " + field.Name);
+                    Console.WriteLine("\t\tProperties:");
+                    foreach (PropertyInfo prop in type.GetProperties())
+                        Console.WriteLine("\t\t\t" + prop.PropertyType + " " + prop.Name);
+                    Console.WriteLine("\t\tMethods:");
+                    foreach (MethodInfo method in type.GetMethods())
+                        Console.WriteLine("\t\t\t" + method.ReturnType + " " + method.Name + "()");
+                    Console.WriteLine("\t\tEvents:");
+                    foreach(EventInfo eventInfo in type.GetEvents())
+                    {
+                        Console.WriteLine("\t\t\t" + eventInfo.EventHandlerType + " " + eventInfo.Name);
+                        Console.WriteLine("\t\t\t\tAdd method:" + eventInfo.GetAddMethod().Name);
+                        Console.WriteLine("\t\t\t\tRemove method:" + eventInfo.GetRemoveMethod().Name);
+                    }
+                }
+            }
+        }
+    }
+
+    // *** 21, 22 *** Reflection to the Max, MethodInfo, MemberInfo 
+    // ORM (Object Relational Mapping) - tables that store object information that can be accessed via "Info" objects
+    // "Info" type for every type of member (methods, properties, fields, events, etc..) you can give a class
+    public class ReflectionMax
+    {
+        class Vector
+        {
+            public float X { get; set; }
+            public float Y { get; set; }
+            public override string ToString()
+            {
+                return "{ X: " + X + ", Y: " + Y + " }";
+            }
+        }
+        public class ReflectionMaxMainClass
+        {
+            public static void ReflectionMaxMain()
+            {
+                Vector vec = new Vector { X = 4, Y = 9 };
+                Console.WriteLine(vec.ToString());
+
+                Type vecType = typeof(Vector);
+                Vector vec2 = Activator.CreateInstance(vecType) as Vector;
+                PropertyInfo xPropInfo = vecType.GetProperty("X");
+                PropertyInfo yPropInfo = vecType.GetProperty("Y");
+                xPropInfo.SetValue(vec2, 4, null);
+                yPropInfo.SetValue(vec2, 9, null);
+                MethodInfo toStringInfo = vecType.GetMethod("ToString");
+                string result = toStringInfo.Invoke(vec2, null) as string;
+                MethodInfo writeLineInfo = typeof(Console).GetMethod("WriteLine", new[] { typeof(string) });
+                writeLineInfo.Invoke(null, new[] { result });
+            }
+        }
+    }
+
+    // *** 23 *** Touching Private Parts, BindingFlags
+    public class TouchingPrivateParts
+    {
+        class Cow
+        {
+            public string Name { get; set; }
+            public int Age { get; set; }
+            private int NumHeartBeats { get; set; }
+            public void Beat() { NumHeartBeats++; }
+            private void Digest() { Console.WriteLine("grind grind..."); }
+            static void WhateverStaticMethod() { }
+        }
+
+        public class TouchingPrivatePartsMainClass
+        {
+            public static void TouchingPrivatePartsMain()
+            {
+                Cow betsy = new Cow { Name = "Betsy", Age = 5 };
+                betsy.Beat(); betsy.Beat(); betsy.Beat(); betsy.Beat(); betsy.Beat();
+                PropertyInfo propInfo = typeof(Cow).GetProperty("NumHeartBeats", BindingFlags.NonPublic | BindingFlags.Instance);
+                int numBeats = (int)propInfo.GetValue(betsy, null);
+
+                //IEnumerable<MemberInfo> members = typeof(Cow).GetMembers().OrderByDescending(mi => mi.DeclaringType.Name);
+                // using BFF = System.Reflection.BindingFlags defined at top of file
+                IEnumerable<MemberInfo> members = typeof(Cow).GetMembers(BFF.DeclaredOnly | BFF.Instance | BFF.Public | BFF.Static | BFF.NonPublic);
+                foreach (MemberInfo minfo in members)
+                    Console.WriteLine(minfo.ToString());
+            }
+        }
+    }
+
+    // *** 25 *** Walking the Inheritance Hierarchy
+    public class WalkingInheritanceHierarchy
+    {
+        class MeBase { }
+        class MeMid : MeBase { }
+        class MeDerived : MeMid { }
+        class MeMoreDerived : MeDerived { }
+        class MeMegaDerived : MeMoreDerived { }
+
+        public class WalkingInheritanceHierarchyMainClass
+        {
+            public static void WalkingInheritanceHierarchyMain()
+            {
+                Type type = typeof(MeMegaDerived);
+                while(type != null)
+                {
+                    Console.WriteLine(type.Name);
+                    type = type.BaseType;
+                }
+            }
+        }
+    }
+
+    #endregion ATTRIBUTES_REFLECTION
+
+    // *** # *** X
+    public class X
+    {
+        public class XMainClass 
+        { 
+            public static void XMain() 
+            { 
+            } 
+        }
+    }
+
+    #region MISCELLANEOUS
+
+    // *** 1 *** var - added in C# 3.5, can only use var within the scope of a function or property body (where you can have expression on right side to infer type)
+    // still compile time, still safe, statically checked, useful for anonymous types when we don't know the class name
+    public class CSharpVar
 	{
 		class Cow { public int MooCount { get; set; } }
 
@@ -4134,9 +4789,11 @@ namespace CSharp
             //new List_IComparable_IComparer().List_IComparable_Comparer_Example();
             //new Delegates().DelegatesMainClass_Example();
             //new Delegates().DelegatesMethodTarget_Example();
-			//(new Stuff()).MainFunc();
+            //(new Stuff()).MainFunc();
 
-			LinqExamples.LinqExamplesMain();
+            //LinqExamples.LinqExamplesMain();
+
+            WritingYourOwnReflector.WritingYourOwnReflectorMainClass.WritingYourOwnReflectorMain();
 
             Console.ReadKey();
         }
