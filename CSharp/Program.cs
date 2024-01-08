@@ -21,14 +21,31 @@ using System.Runtime.Serialization;
 using System.Xml.Linq;
 using System.Text;
 using BFF = System.Reflection.BindingFlags;
+using System.Windows.Forms.VisualStyles;
+using System.Globalization;
+using System.Windows.Markup;
+using System.Text.RegularExpressions;
+using System.Net;
+using System.Web;
 
 namespace CSharp
 {
-	#region CONTAINERS
+    // *** # *** X
+    public class X
+    {
+        public class XMainClass
+        {
+            public static void XMain()
+            {
+            }
+        }
+    }
 
-	#region Arrays
+    #region CONTAINERS
 
-	class ImplicitilyTypedArrays
+    #region Arrays
+
+    class ImplicitilyTypedArrays
 	{
 		class Base { }
 		class Derived1 : Base { }
@@ -449,75 +466,103 @@ namespace CSharp
 		}
 	}
 
-	class List_IComparable_IComparer
+	public class List_IComparable_IComparer
 	{
-		class Babe : IComparable<Babe>
+		public class Babe : IComparable<Babe>
 		{
 			public string Name { get; set; }
-			public int Hotness { get; set; }
+            public int Chemistry { get; set; }
+            public int Compatibility { get; set; }
+            public int Hotness { get; set; }
 			public int Intelligence { get; set; }
 			public int Confidence { get; set; }
 			public int Athleticism { get; set; }
-			public int Neediness { get; set; }
-			public int Lovingness { get; set; }
-			static Random rand = new Random();
+			public int Cooperative { get; set; }
+			public int Loving { get; set; }
+            public int Authentic { get; set; }
+            public double AggregateScore { get; set; }
+            static Random rand = new Random();
 
 			public Babe(string name)
 			{
 				Name = name;
+                Chemistry = rand.Next(6, 10);
+                Compatibility = rand.Next(6, 10);
 				Hotness = rand.Next(6, 10);
 				Intelligence = rand.Next(6, 10);
 				Confidence = rand.Next(6, 10);
 				Athleticism = rand.Next(6, 10);
-				Neediness = rand.Next(6, 10);
-				Lovingness = rand.Next(6, 10);
-			}
-			public Babe(string name, int hotness = 5, int intelligence = 5, int confidence = 5, int athleticism = 5, int neediness = 5, int lovingness = 5)
+                Cooperative = rand.Next(6, 10);
+				Loving = rand.Next(6, 10);
+                Authentic = rand.Next(6, 10);
+
+            }
+			public Babe(string name, int chemistry = 5, int compatibility = 5, int hotness = 5, int intelligence = 5, int confidence = 5, int athleticism = 5, int cooperative = 5, int loving = 5, int authentic = 5)
 			{
+                Name = name;
+                Chemistry = chemistry;
+                Compatibility = compatibility;
+                Hotness = hotness;
+                Intelligence = intelligence;
+                Confidence = confidence;
+                Athleticism = athleticism;
+                Cooperative = cooperative;
+                Loving = loving;
+                Authentic = authentic;
+                AggregateScore = (Chemistry + Compatibility + Hotness + Intelligence + Confidence + Athleticism + Cooperative + Loving + Authentic) / 9.0;
 			}
 
 			// in order for a class to implement the IComparable<T> interface, it must define the IComparable<T>.CompareTo member method
 			public int CompareTo(Babe other)
 			{
-				return Hotness.CompareTo(other.Hotness);
+				return AggregateScore.CompareTo(other.AggregateScore);
 			}
 
 			//System.Console.WriteLine($"[{id:000}]\t{lastName}, {firstName}");
 			public override string ToString()
 			{
-				return $"{Name,-10}: Hotness = {Hotness,2}, Intelligence = {Intelligence,2}, Confidence = {Confidence,2}, Athleticism = {Athleticism,2}, Neediness = {Neediness,2}, Lovingness = {Lovingness,2}";
-			}
+				//return $"{Name,-10}: Chemistry = {Chemistry,2}, Compatibility = {Compatibility,2}, Hotness = {Hotness,2}, Intelligence = {Intelligence,2}, Confidence = {Confidence,2}, Athleticism = {Athleticism,2}, Cooperative = {Cooperative,2}, Loving = {Loving,2}, Authenticity = {Authentic,2}";
+                return $"{Name,-10}: {Math.Round(AggregateScore, 2), 2}";
+            }
 		}
 
-		class MyBabeComparer : IComparer<Babe>
+		public class MyBabeComparer : IComparer<Babe>
 		{
 			// in order for a comparer class to implement the IComparer<T> interface, it must define the IComparer<T>.Compare member method
 			public int Compare(Babe left, Babe right)
 			{
-				return left.Hotness - right.Hotness;
+				//return left.Hotness - right.Hotness;
+				return left.CompareTo(right);
 			}
 		}
 
 		public void List_IComparable_Comparer_Example()
 		{
 			List<Babe> myBabes = new List<Babe> {
-				new Babe("Erin"),
-				new Babe("Caroline"),
-				new Babe("Diana"),
-				new Babe("Abby"),
-				new Babe("Bori"),
-				new Babe("Emily"),
-				new Babe("Andrea"),
-				new Babe("Yvonne"),
-				new Babe("Stephanie"),
-				new Babe("Denise"),
-				new Babe("Josie"),
-                new Babe("Abbi")
+                // Chemistry + Compatibile + Hot + Intelligent + Confidet + Athletic + Cooperative + Affectionate + Authentic
+                new Babe("Erin",       7, 6, 7, 8, 9, 8, 6, 4, 5),
+				new Babe("Caroline",   8, 6, 8, 8, 7, 7, 4, 6, 4),
+				new Babe("Diana",      6, 7, 8, 8, 4, 7, 9, 9, 9),
+				new Babe("Abby",       8, 6, 9, 7, 5, 5, 5, 5, 5),
+				new Babe("Bori",       9, 6, 7, 8, 7, 6, 8, 6, 6),
+				new Babe("Emily",      9, 7, 9, 6, 6, 6, 8, 8, 8),
+				new Babe("Andrea",     7, 5, 6, 6, 6, 4, 6, 4, 3),
+				new Babe("Yvonne",     4, 4, 7, 7, 3, 3, 3, 3, 4),
+				new Babe("Stephanie", 10, 8, 9, 8, 8, 8, 8, 8, 7),
+				new Babe("Denise",     3, 5, 6, 6, 5, 4, 4, 3, 5),
+				new Babe("Josie",      7, 8, 9, 6, 6, 7, 9, 9, 8),
+				new Babe("Abbi",       9, 7, 9, 7, 7, 7, 7, 6, 6),
+				new Babe("Sarah",      6, 6, 7, 7, 7, 5, 9, 9, 9),
+                new Babe("Catherine",  8, 5, 9, 9, 5, 6, 2, 3, 7)
             };
 			myBabes.Sort();
+            //myBabes = myBabes.OrderByDescending(b => b);
+            myBabes = myBabes.OrderByDescending(b => b).ToList();
 			myBabes.ForEach(babe => Console.WriteLine(babe));
 
-			myBabes.Sort(new MyBabeComparer()); // Comparer class must implement the IComparer<T> interface, which means it must define the IComparer<T>.Compare member method
+            //myBabes.OrderBy()
+			myBabes.Sort(new MyBabeComparer())
+                ; // Comparer class must implement the IComparer<T> interface, which means it must define the IComparer<T>.Compare member method
 		}
 	}
 
@@ -3165,6 +3210,15 @@ namespace CSharp
 			// Alternatively, we could use a 'Lookup':
 			ILookup<int, string> carsByPersonId = persons.ToLookup(person => person.PersonId, person => person.car);
 			IEnumerable<string> carsForPerson = carsByPersonId[1];
+
+			// Read a file skipping the header line and ignoring any empty lines
+			IEnumerable<string> lines = File.ReadAllLines("file.txt").Skip(1).Where(line => line.Length > 1);
+
+			int[] arr = new int[] { 3, 3, 2, 7, 1, 4, 2, 3, 6, 3 };
+			// Get element with max occurances in an arry
+			int maxOccur = arr.GroupBy(i => i).OrderByDescending(g => g.Count()).Select(g => g.Key).First();
+			// Get count of element that occurs most in an array
+			int maxCount = arr.GroupBy(i => i).OrderByDescending(g => g.Count()).Select(g => g.Count()).First();
 		}
 	}
 
@@ -4626,17 +4680,6 @@ namespace CSharp
 
     #endregion ATTRIBUTES_REFLECTION
 
-    // *** # *** X
-    public class X
-    {
-        public class XMainClass 
-        { 
-            public static void XMain() 
-            { 
-            } 
-        }
-    }
-
     #region MISCELLANEOUS
 
     // *** 1 *** var - added in C# 3.5, can only use var within the scope of a function or property body (where you can have expression on right side to infer type)
@@ -4770,15 +4813,73 @@ namespace CSharp
 	}
 	#endregion MISCELLANEOUS
 
-	public class Stuff
+	public class RandomStuff
     {
+		// Sort using a custom comparison method
+		public static string[] SortIntegerStrings(string[] unsorted)
+		{
+			Array.Sort(unsorted, CompareIntegerStrings);
+			return unsorted;
+		}
+		// returns negative number if x < y (x comes before y), 0 if equal, and positive number if x > y (x comes after y)
+		public static int CompareIntegerStrings(string x, string y)
+		{
+			if (x.Length != y.Length)
+				return x.Length - y.Length;
+			for (int i = 0; i < x.Length; i++)
+			{
+				char left = x[i];
+				char right = y[i];
+				if (left != right)
+					return left - right;
+			}
+			return 0;
+		}
+
+		// Example of sorting 2D List on both columns
+		public static void PrintCustomerNumberInOrder()
+		{
+			int[][] orders = new int[5][];
+			orders[0] = new int[] { 8, 3 };
+			orders[1] = new int[] { 5, 6 };
+			orders[2] = new int[] { 6, 2 };
+			orders[3] = new int[] { 2, 3 };
+			orders[4] = new int[] { 4, 3 };
+			int[] customerOrder = GetCustomerNumberOrder(orders);
+			Array.ForEach(customerOrder, x => Console.WriteLine(x));
+		}
+		public static int[] GetCustomerNumberOrder(int[][] orders)
+		{
+			int n = orders.Length;
+			int[] customerOrder = new int[n];
+			List<List<int>> ordersList = new List<List<int>>();
+			for (int i = 0; i < n; i++)
+			{
+				List<int> currentCustomer = new List<int>();
+				currentCustomer.Add(orders[i][0] + orders[i][1]); // Total prep time
+				currentCustomer.Add(i + 1); // Customer #
+				ordersList.Add(currentCustomer);
+			}
+
+			// Order by total prep time, then by customer #
+			ordersList = ordersList.OrderBy(o => o[0]).ThenBy(o => o[1]).ToList();
+
+			for (int i = 0; i < n; i++)
+			{
+				Console.WriteLine(ordersList[i][0] + ", " + ordersList[i][1]);
+				customerOrder[i] = ordersList[i][1];
+			}
+
+			return customerOrder;
+		}
+
 		public void MainFunc()
         {
             // string multiplication
             string str = new string('*', 10);
-
-			// hackerrank - "Designer PDF Viewer" single line solution
-			//return word.Length * new List<char>(word).ConvertAll(c => h[c - 'a']).Max();
+			// Find index of item in array
+			int[] arr = new int[] { 1, 2, 3, 4, 5 };
+			int index = Array.FindIndex(arr, i => i == 3);
 		}
 	}
 
@@ -4786,16 +4887,27 @@ namespace CSharp
     {
         static void Main(string[] args)
         {
-            //new List_IComparable_IComparer().List_IComparable_Comparer_Example();
-            //new Delegates().DelegatesMainClass_Example();
-            //new Delegates().DelegatesMethodTarget_Example();
-            //(new Stuff()).MainFunc();
+            List_IComparable_IComparer babeList = new List_IComparable_IComparer();
+            babeList.List_IComparable_Comparer_Example();
 
-            //LinqExamples.LinqExamplesMain();
+            //String hostName = string.Empty;
+            //hostName = Dns.GetHostName();
+            //IPHostEntry myIP = Dns.GetHostEntry(hostName);
+            //IPAddress[] address = myIP.AddressList;
 
-            WritingYourOwnReflector.WritingYourOwnReflectorMainClass.WritingYourOwnReflectorMain();
+            //for (int i = 0; i < address.Length; i++)
+            //{
+            //    Console.WriteLine($"{address[i].AddressFamily.ToString()}: {address[i].ToString()}");
+            //}
+
+            //Console.WriteLine("------------");
+
+            ////string list = string.Join(Environment.NewLine, address.Select(a => $"{a.AddressFamily.ToString()}: {a.ToString()}").ToArray());
+            //string list = string.Join(Environment.NewLine, address.Select(a => a.AddressFamily.ToString() + ": " + a.ToString()).ToArray());
+
+            //Console.WriteLine(list);
 
             Console.ReadKey();
         }
-    }
+	}
 }
